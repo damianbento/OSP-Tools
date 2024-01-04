@@ -1,0 +1,82 @@
+#!/bin/bash
+#Control de flujo: case
+LIG='\033[1;34m'
+NC='\033[0m'
+echo -e ${LIG}'+--------------------------------------+--------+'
+echo '| Tarea vMotion                        | Select |'
+echo '+--------------------------------------+--------+'
+echo '|          List Hypervisor             |   1    |'
+echo '|           List All VMs               |   2    |'
+echo '|          Migrate one VM              |   3    |'
+echo '|     Evacuate all vm from host        |   4    |'
+echo '|        Status vm migration           |   5    |'
+echo '|      Status Host evacuation          |   6    |'
+echo '|               Exit                   |   7    |'
+echo '+--------------------------------------+--------+'
+
+
+echo "Select option"
+echo -e ${NC}
+ read option
+ case $option in
+      1)
+        echo "List of Hypervisor"
+        openstack hypervisor list
+	./vmotion
+      ;;
+      2)
+        echo "List all vm"
+	openstack server list
+	./vmotion
+      ;;
+
+      3)
+	echo "One vm migration use ID ej.(92d447a2-6fad-4504-b021-ef9eec32a524)"
+	read -p 'Enter VM ID :' ID
+	echo 'wait for vm detail....'
+	openstack server show $ID
+	echo -n "Are you agree to migrate this VM? (y/n) "
+	read var
+		if [[ $var = y ]]; then
+			echo 'Select placement host hypervisor'
+			echo 'wait for list.....'
+                        openstack hypervisor list
+			read -p 'select host:' host
+			echo 'host selected' $host
+		        VM_OUTPUT=$(openstack server show $ID)
+                        VM_STATUS=$(echo "$VM_OUTPUT" | grep status | awk '{print $4}')
+			echo $VM_STATUS
+			while [[ "$VM_STATUS" != "VERIFY_RESIZE" ]]; do
+			echo -n "."
+			sleep 2
+			VM_OUTPUT=$(openstack server show $ID)
+			VM_STATUS=$(echo "$VM_OUTPUT" | grep status | awk '{print $4}')
+			done
+			nova resize-confirm $ID
+			echo " instance migrated and resized."
+			echo;
+		else
+        echo 'cancelada la migracion'
+		fi
+      ;;
+
+      4)
+        echo "¡Incorrecto!"
+      ;;
+
+      5)
+        echo "¡Incorrecto!"
+      ;;
+
+      6)
+        echo "¡Incorrecto!"
+      ;;
+
+      7)
+        echo "Good bye"
+	exit;
+      ;;
+
+
+
+    esac
